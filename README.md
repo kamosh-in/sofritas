@@ -8,6 +8,8 @@ AWS Transfer for SFTP is [HIPAA-eligible](https://aws.amazon.com/compliance/hipa
 
 AWS frequently uses the [shared responsibility model](https://aws.amazon.com/compliance/shared-responsibility-model/) to help describe where Amazon's management of security begins, and where it ends.  Namely, they are responsible for security *of* the cloud, and we are responsible for security *in* the cloud.
 
+![Share Responsibility Model](https://d1.awsstatic.com/security-center/Shared_Responsibility_Model_V2.59d1eccec334b366627e9295b304202faf7b899b.jpg)
+
 Amazon S3 is our likely domain for the SFTP server, and it has [server-side data encryption](https://docs.aws.amazon.com/transfer/latest/userguide/encryption-at-rest.html) with either Amazon S3 managed keys (SSE-S3) or AWS Key Management Service (AWS KMS) managed keys (SSE-KMS).
 
 If the identity provider is service-managed, then part of our responsibility is [key management](https://docs.aws.amazon.com/transfer/latest/userguide/key-management.html#keyrotation), which includes generating and rotating SSH keys every 3 months, as per recommendation.
