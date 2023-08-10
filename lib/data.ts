@@ -4,12 +4,14 @@ import { Bucket } from 'aws-cdk-lib/aws-s3'
 import { Construct } from 'constructs'
 
 export class Data extends Construct {
+	bucket: Bucket
+	accessRole: Role
   constructor(scope: Stack, id: string) {
     super(scope, id)
 
-		const bucket = new Bucket(this, 'Bucket')
+		this.bucket = new Bucket(this, 'Bucket')
 
-    const accessRole = new Role(this, 'AccessRole', {
+    this.accessRole = new Role(this, 'AccessRole', {
       assumedBy: new ServicePrincipal('transfer.amazonaws.com'),
 			managedPolicies: [
 				ManagedPolicy.fromAwsManagedPolicyName('SecretsManagerReadWrite'),
@@ -23,9 +25,9 @@ export class Data extends Construct {
 			],
 		})
 
-    bucket.grantReadWrite(accessRole)
+    this.bucket.grantReadWrite(this.accessRole)
 		
-		bucket.grantReadWrite(workflowRole)
+		this.bucket.grantReadWrite(workflowRole)
 		// Also grant access to invoke any Lambda functions used in workflow
   }
 }

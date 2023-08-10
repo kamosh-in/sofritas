@@ -8,77 +8,88 @@ import { Secret } from 'aws-cdk-lib/aws-secretsmanager'
 
 // Additional Modules
 import { resolve } from 'path'
+import { Bucket } from 'aws-cdk-lib/aws-s3'
+import { CfnServer } from 'aws-cdk-lib/aws-transfer'
 
 // Props for the Handler Construct
-interface HandlerProps {}
+interface HandlerProps {
+	bucketName: string
+	roleArn: string
+	serverId: string
+}
 
 // Construct for the Handler
 class Handler extends Construct {
 	user: { create: NodejsFunction; read: NodejsFunction; update: NodejsFunction; delete: NodejsFunction }
-	connection: { create: NodejsFunction; delete: NodejsFunction; read: NodejsFunction; update: NodejsFunction }
-  constructor(scope: Api, id: string, props?: HandlerProps) {
+	connector: { create: NodejsFunction; delete: NodejsFunction; read: NodejsFunction; update: NodejsFunction }
+  constructor(scope: Api, id: string, props: HandlerProps) {
     super(scope, id)
 
 		// Role to assume for the Lambda Functions
 		const role = new Role(this, 'Role', {
 			assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
 			managedPolicies: [
-				ManagedPolicy.fromAwsManagedPolicyName('AWSLambdaExecute')
+				ManagedPolicy.fromAwsManagedPolicyName('AWSLambdaExecute'),
+				ManagedPolicy.fromAwsManagedPolicyName('AWSTransferFullAccess'),
 			],
 		})
 
 		// Common properties for all functions
 		const handlerProps: NodejsFunctionProps = {
-			// environment: {},
+			environment: {
+				BUCKET_NAME: props.bucketName,
+				ROLE_ARN: props.roleArn,
+				SERVER_ID: props.serverId
+			},
 			role,
 		}
 
 		// User Create function
-		const userCreate = new NodejsFunction(this, 'Create', {
+		const userCreate = new NodejsFunction(this, 'UserCreate', {
 			...handlerProps,
 			entry: resolve(__dirname, '../src/handlers/user/create.ts')
 		})
 
 		// User Read function
-		const userRead = new NodejsFunction(this, 'Read', {
+		const userRead = new NodejsFunction(this, 'UserRead', {
 			...handlerProps,
 			entry: resolve(__dirname, '../src/handlers/user/read.ts')
 		})
 
 		// User Update function
-		const userUpdate = new NodejsFunction(this, 'Update', {
+		const userUpdate = new NodejsFunction(this, 'UserUpdate', {
 			...handlerProps,
 			entry: resolve(__dirname, '../src/handlers/user/update.ts')
 		})
 
 		// User Delete function
-		const userDelete = new NodejsFunction(this, 'Delete', {
+		const userDelete = new NodejsFunction(this, 'UserDelete', {
 			...handlerProps,
 			entry: resolve(__dirname, '../src/handlers/user/delete.ts')
 		})
 
-		// Connection Create function
-		const connectionCreate = new NodejsFunction(this, 'Create', {
+		// connector Create function
+		const connectorCreate = new NodejsFunction(this, 'ConnectorCreate', {
 			...handlerProps,
-			entry: resolve(__dirname, '../src/handlers/connection/create.ts')
+			entry: resolve(__dirname, '../src/handlers/connector/create.ts')
 		})
 
-		// Connection Read function
-		const connectionRead = new NodejsFunction(this, 'Read', {
+		// connector Read function
+		const connectorRead = new NodejsFunction(this, 'ConnectorRead', {
 			...handlerProps,
-			entry: resolve(__dirname, '../src/handlers/connection/read.ts')
+			entry: resolve(__dirname, '../src/handlers/connector/read.ts')
 		})
 
-		// Connection Update function
-		const connectionUpdate = new NodejsFunction(this, 'Update', {
+		// connector Update function
+		const connectorUpdate = new NodejsFunction(this, 'ConnectorUpdate', {
 			...handlerProps,
-			entry: resolve(__dirname, '../src/handlers/connection/update.ts')
+			entry: resolve(__dirname, '../src/handlers/connector/update.ts')
 		})
 
-		// Connection Delete function
-		const connectionDelete = new NodejsFunction(this, 'Delete', {
+		// connector Delete function
+		const connectorDelete = new NodejsFunction(this, 'ConnectorDelete', {
 			...handlerProps,
-			entry: resolve(__dirname, '../src/handlers/connection/delete.ts')
+			entry: resolve(__dirname, '../src/handlers/connector/delete.ts')
 		})
 
 		this.user = {
@@ -88,11 +99,11 @@ class Handler extends Construct {
 			update: userUpdate,
 		}
 
-		this.connection = {
-			create: connectionCreate,
-			delete: connectionDelete,
-			read: connectionRead,
-			update: connectionUpdate,
+		this.connector = {
+			create: connectorCreate,
+			delete: connectorDelete,
+			read: connectorRead,
+			update: connectorUpdate,
 		}
 	}
 }
@@ -138,15 +149,27 @@ class Authorizer extends Construct {
 }
 
 // Props for the Api Construct
-export interface ApiProps {}
+export interface ApiProps {
+	accessRole: Role
+	bucket: Bucket
+	server: CfnServer
+}
 
 // Construct for the Api
 export class Api extends Construct {
   constructor(scope: Stack, id: string, props: ApiProps) {
     super(scope, id)
 
+		const { bucketName } = props.bucket
+		const { roleArn } = props.accessRole
+		const {attrServerId: serverId} = props.server
+
 		// Initialize Handler Construct
-		const handler = new Handler(this, 'Handler')
+		const handler = new Handler(this, 'Handler', {
+			bucketName,
+			roleArn,
+			serverId
+		})
 
 		// Initialize Authorizer Construct
 		const { authorizer } = new Authorizer(this, 'Authorizer')
@@ -162,11 +185,11 @@ export class Api extends Construct {
 
 		// Resources
 
-		// /connection
-		const rootConnection = api.root.addResource('connection')
+		// /connector
+		const rootConnector = api.root.addResource('connector')
 
-		// /connection/{Id}
-		const rootConnectionId = rootConnection.addResource('{Id}')
+		// /connector/{Id}
+		const rootConnectorId = rootConnector.addResource('{Id}')
 		
 		// /user
 		const rootUser = api.root.addResource('user')
@@ -174,19 +197,19 @@ export class Api extends Construct {
 		// /user/{Id}
 		const rootUserId = rootUser.addResource('{Id}')
 
-		// Connection Methods
+		// connector Methods
 		
-		// POST /connection
-		rootConnection.addMethod('POST', new LambdaIntegration(handler.connection.create))
+		// POST /connector
+		rootConnector.addMethod('POST', new LambdaIntegration(handler.connector.create))
 
-		// GET /connection
-		rootConnection.addMethod('GET', new LambdaIntegration(handler.connection.read))
+		// GET /connector
+		rootConnector.addMethod('GET', new LambdaIntegration(handler.connector.read))
 
-		// PUT /connection/{Id}
-		rootConnectionId.addMethod('PUT', new LambdaIntegration(handler.connection.update))
+		// PUT /connector/{Id}
+		rootConnectorId.addMethod('PUT', new LambdaIntegration(handler.connector.update))
 
-		// DELETE /connection/{Id}
-		rootConnectionId.addMethod('DELETE', new LambdaIntegration(handler.connection.delete))
+		// DELETE /connector/{Id}
+		rootConnectorId.addMethod('DELETE', new LambdaIntegration(handler.connector.delete))
 
 		// User Methods
 
