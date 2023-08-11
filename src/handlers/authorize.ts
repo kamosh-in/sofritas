@@ -11,19 +11,19 @@ import { SECRET_NAME } from '../lib/env'
 // Get input for the GetSecretValue Command
 const getInput = (SecretId: string): GetSecretValueCommandInput => {
 	return {
-		SecretId
+		SecretId,
 	}
 }
 
-// Get GetSecretValueCommand for the DynamoDB Document Client to send
+// Get GetSecretValueCommand for the Secrets Manager Client to send
 const getCommand = (input: GetSecretValueCommandInput): GetSecretValueCommand => {
 	return new GetSecretValueCommand(input)
 }
 
 // Get result for API Gateway Authorizer
-const getResult = (event: APIGatewayTokenAuthorizerEvent, response: GetSecretValueCommandOutput): APIGatewayAuthorizerResult => {
+const getResult = (event: APIGatewayTokenAuthorizerEvent, response?: GetSecretValueCommandOutput): APIGatewayAuthorizerResult => {
 	let Effect = 'Deny'
-	if (response.SecretString === event.authorizationToken)
+	if (response?.SecretString === event.authorizationToken)
 		Effect = 'Allow'
 
 	return {
@@ -54,9 +54,6 @@ export const handler = async (event: APIGatewayTokenAuthorizerEvent): Promise<AP
 		return getResult(event, response)
 	} catch (error) {
 		console.log(`ERROR:\n${JSON.stringify(error, null, 2)}`)
-		return getResult(event, {
-			$metadata: {},
-			SecretString: '',
-		})
+		return getResult(event)
 	}
 }
