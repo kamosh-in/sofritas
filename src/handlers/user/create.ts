@@ -1,21 +1,24 @@
-import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda'
 import { CreateUserCommand, CreateUserCommandInput } from '@aws-sdk/client-transfer'
+import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda'
 
 import { transferClient } from '../../lib/aws'
 import { BUCKET_NAME as BucketName, ROLE_ARN as Role, SERVER_ID as ServerId } from '../../lib/env'
 
 const getInput = (event: APIGatewayProxyEvent): CreateUserCommandInput =>  {
+	const { HomeDirectory, SshPublicKeyBody, UserName  } = JSON.parse(event.body as string)
 	
-	const { SshPublicKeyBody, UserName } = JSON.parse(event.body as string)
-
 	if (!SshPublicKeyBody || !UserName)
 		throw Error('SshPublicKeyBody or UserName missing')
+
+	let Target = `/${BucketName}/${UserName}`
+	if (HomeDirectory)
+		Target = `/${BucketName}/${HomeDirectory}`
 
 	return {
 		HomeDirectoryMappings: [
 			{
 				Entry: '/',
-				Target: `/${BucketName}/${UserName}`,
+				Target,
 			}
 		],
 		HomeDirectoryType: 'LOGICAL',
