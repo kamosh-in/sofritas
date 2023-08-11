@@ -20,7 +20,7 @@ interface HandlerProps {
 
 // Construct for the Handler
 class Handler extends Construct {
-	user: { create: NodejsFunction; read: NodejsFunction; update: NodejsFunction; delete: NodejsFunction }
+	user: { create: NodejsFunction; read: NodejsFunction; update: NodejsFunction; delete: NodejsFunction, describe: NodejsFunction }
 	connector: { create: NodejsFunction; delete: NodejsFunction; read: NodejsFunction; update: NodejsFunction }
   constructor(scope: Api, id: string, props: HandlerProps) {
     super(scope, id)
@@ -68,25 +68,31 @@ class Handler extends Construct {
 			entry: resolve(__dirname, '../src/handlers/user/delete.ts')
 		})
 
-		// connector Create function
+		// User Describe function
+		const userDescribe = new NodejsFunction(this, 'UserDescribe', {
+			...handlerProps,
+			entry: resolve(__dirname, '../src/handlers/user/describe.ts')
+		})
+
+		// Connector Create function
 		const connectorCreate = new NodejsFunction(this, 'ConnectorCreate', {
 			...handlerProps,
 			entry: resolve(__dirname, '../src/handlers/connector/create.ts')
 		})
 
-		// connector Read function
+		// Connector Read function
 		const connectorRead = new NodejsFunction(this, 'ConnectorRead', {
 			...handlerProps,
 			entry: resolve(__dirname, '../src/handlers/connector/read.ts')
 		})
 
-		// connector Update function
+		// Connector Update function
 		const connectorUpdate = new NodejsFunction(this, 'ConnectorUpdate', {
 			...handlerProps,
 			entry: resolve(__dirname, '../src/handlers/connector/update.ts')
 		})
 
-		// connector Delete function
+		// Connector Delete function
 		const connectorDelete = new NodejsFunction(this, 'ConnectorDelete', {
 			...handlerProps,
 			entry: resolve(__dirname, '../src/handlers/connector/delete.ts')
@@ -97,6 +103,7 @@ class Handler extends Construct {
 			delete: userDelete,
 			read: userRead,
 			update: userUpdate,
+			describe: userDescribe,
 		}
 
 		this.connector = {
@@ -197,7 +204,7 @@ export class Api extends Construct {
 		// /user/{Id}
 		const rootUserId = rootUser.addResource('{Id}')
 
-		// connector Methods
+		// Connector Methods
 		
 		// POST /connector
 		rootConnector.addMethod('POST', new LambdaIntegration(handler.connector.create))
@@ -224,5 +231,8 @@ export class Api extends Construct {
 
 		// DELETE /user/{Id}
 		rootUserId.addMethod('DELETE', new LambdaIntegration(handler.user.delete))
+
+		// GET /user/{Id}
+		rootUserId.addMethod('GET', new LambdaIntegration(handler.user.describe))
   }
 }

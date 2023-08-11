@@ -19,3 +19,10 @@ Transfer Family includes easy and simple [logging and monitoring](https://docs.a
 Some of the [infrastructure security](https://docs.aws.amazon.com/transfer/latest/userguide/infrastructure-security.html) relevant to this service that all clients must support is the use of TLS 1.2 (at minimum, recommended TLS 1.3) for the Transport-layer security and Cipher suites with perfect forward secrecy.
 
 You can also [secure Transfer Family with WAF and API Gateway](https://aws.amazon.com/blogs/storage/securing-aws-transfer-family-with-aws-web-application-firewall-and-amazon-api-gateway/) to add web ACLs that help protect against attacks.
+
+
+## Generating a Key
+
+To generate an SSH key for a user, use this command:
+
+```ssh-keygen -t ed25519 -f username_eddsa```
