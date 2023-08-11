@@ -1,11 +1,52 @@
-import { APIGatewayProxyHandler } from 'aws-lambda'
+import { ListUsersCommand, ListUsersCommandInput, ListUsersCommandOutput } from '@aws-sdk/client-transfer'
+import { APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda'
+
+import { transferClient } from '../../lib/aws'
+import { SERVER_ID as ServerId } from '../../lib/env'
+
+const getInput = (): ListUsersCommandInput =>  {
+	return {
+		ServerId,
+	}
+}
+
+const getCommand = (input: ListUsersCommandInput): ListUsersCommand =>  {
+	return new ListUsersCommand(input)
+}
+
+const getResult = (statusCode: number, response?: ListUsersCommandOutput): APIGatewayProxyResult =>  {
+	let	message: any = 'List Users Command Failed'
+	if (response && statusCode == 200) {
+		if (response.Users) {
+			message = {
+				Users: [],
+			}
+			response.Users.forEach(element => {
+				message.Users.push(element.UserName)
+			})
+		}
+	}
+
+	return {
+		body: JSON.stringify({
+			message
+		}, null, 2),
+		statusCode,
+	}
+}
 
 export const handler: APIGatewayProxyHandler = async (event) => {
-	console.log(`EVENT:\n{JSON.stringify(event, null, 2)}`)
-	return {
-		statusCode: 200,
-		body: JSON.stringify({
-			message: 'Hello World!',
-		}, null, 2),
+	try {
+		console.log(`EVENT:\n${JSON.stringify(event, null, 2)}`)
+		const input = getInput()
+		console.log(`INPUT:\n${JSON.stringify(input, null, 2)}`)
+		const command = getCommand(input)
+		console.log(`COMMAND:\n${JSON.stringify(command, null, 2)}`)
+		const response = await transferClient.send(command)
+		console.log(`RESPONSE:\n${JSON.stringify(response, null, 2)}`)
+		return getResult(200, response)
+	} catch (error) {
+		console.log(`ERROR:\n${JSON.stringify(error, null, 2)}`)
+		return getResult(400)
 	}
 }
