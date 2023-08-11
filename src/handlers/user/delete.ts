@@ -17,10 +17,9 @@ const getCommand = (input: DeleteUserCommandInput): DeleteUserCommand =>  {
 }
 
 const getResult = (statusCode: number): APIGatewayProxyResult =>  {
-	let	message = 'Delete User Command Failed'
-	if (statusCode == 200)
-		message = 'Delete User Command Succeeded'
-	
+	let	message = 'Delete User Command'
+	statusCode == 200? message += 'Succeeded': message += 'Failed'
+
 	return {
 		body: JSON.stringify({
 			message

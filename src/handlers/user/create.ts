@@ -5,15 +5,14 @@ import { transferClient } from '../../lib/aws'
 import { BUCKET_NAME as BucketName, ROLE_ARN as Role, SERVER_ID as ServerId } from '../../lib/env'
 
 const getInput = (event: APIGatewayProxyEvent): CreateUserCommandInput =>  {
-	const { HomeDirectory, SshPublicKeyBody, UserName  } = JSON.parse(event.body as string)
+	const { HomeDirectory, SshPublicKeyBody, UserName } = JSON.parse(event.body as string)
 	
 	if (!SshPublicKeyBody || !UserName)
 		throw Error('SshPublicKeyBody or UserName missing')
 
-	let Target = `/${BucketName}/${UserName}`
-	if (HomeDirectory)
-		Target = `/${BucketName}/${HomeDirectory}`
-
+	let Target
+	HomeDirectory? Target = `/${BucketName}/${HomeDirectory}`: Target = `/${BucketName}/${UserName}`
+	
 	return {
 		HomeDirectoryMappings: [
 			{
@@ -34,9 +33,8 @@ const getCommand = (input: CreateUserCommandInput): CreateUserCommand =>  {
 }
 
 const getResult = (statusCode: number): APIGatewayProxyResult =>  {
-	let	message = 'Create User Command Failed'
-	if (statusCode == 200)
-		message = 'Create User Command Succeeded'
+	let	message = 'Create User Command'
+	statusCode == 200 ? message += 'Succeeded': message += 'Failed'
 	
 	return {
 		body: JSON.stringify({

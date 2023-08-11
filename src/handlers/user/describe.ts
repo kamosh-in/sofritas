@@ -17,19 +17,25 @@ const getCommand = (input: DescribeUserCommandInput): DescribeUserCommand =>  {
 }
 
 const getResult = (statusCode: number, response?: DescribeUserCommandOutput): APIGatewayProxyResult =>  {
-	let	message: any = 'Describe User Command Failed'
-	if (response && statusCode == 200)
-		if (response.User) {
-			const { HomeDirectoryMappings, SshPublicKeys, UserName } = response.User
-			const { Target: HomeDirectory } = (HomeDirectoryMappings as HomeDirectoryMapEntry[])[0]
-			const { SshPublicKeyBody: PublicKey } = (SshPublicKeys as SshPublicKey[])[0]
-			message = {
-				HomeDirectory,
-				PublicKey,
-				UserName,
-			}
-		}
-		
+	let	message
+	statusCode == 200 ? message = {
+		HomeDirectory: (response?.User?.HomeDirectoryMappings as HomeDirectoryMapEntry[])[0].Target,
+		PublicKey: (response?.User?.SshPublicKeys as SshPublicKey[])[0].SshPublicKeyBody,
+		UserName: response?.User?.UserName,
+	} : message = 'Describe User Command Failed'
+
+
+
+		// 	const { HomeDirectoryMappings, SshPublicKeys, UserName } = response.User
+		// 	const { Target: HomeDirectory } = (HomeDirectoryMappings as HomeDirectoryMapEntry[])[0]
+		// 	const { SshPublicKeyBody: PublicKey } = (SshPublicKeys as SshPublicKey[])[0]
+		// 	message = {
+		// 		HomeDirectory,
+		// 		PublicKey,
+		// 		UserName,
+		// 	}
+		// }
+
 	return {
 		body: JSON.stringify({
 			message

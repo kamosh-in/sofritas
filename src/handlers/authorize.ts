@@ -6,10 +6,10 @@ import { GetSecretValueCommand, GetSecretValueCommandInput, GetSecretValueComman
 
 // Local Modules
 import { secretsManagerClient } from '../lib/aws/'
-import { SECRET_NAME } from '../lib/env'
+import { SECRET_NAME as SecretId } from '../lib/env'
 
 // Get input for the GetSecretValue Command
-const getInput = (SecretId: string): GetSecretValueCommandInput => {
+const getInput = (): GetSecretValueCommandInput => {
 	return {
 		SecretId,
 	}
@@ -22,9 +22,8 @@ const getCommand = (input: GetSecretValueCommandInput): GetSecretValueCommand =>
 
 // Get result for API Gateway Authorizer
 const getResult = (event: APIGatewayTokenAuthorizerEvent, response?: GetSecretValueCommandOutput): APIGatewayAuthorizerResult => {
-	let Effect = 'Deny'
-	if (response?.SecretString === event.authorizationToken)
-		Effect = 'Allow'
+	let Effect
+	response?.SecretString === event.authorizationToken? Effect = 'Allow': Effect = 'Deny'
 
 	return {
 		policyDocument: {
@@ -45,7 +44,7 @@ const getResult = (event: APIGatewayTokenAuthorizerEvent, response?: GetSecretVa
 export const handler = async (event: APIGatewayTokenAuthorizerEvent): Promise<APIGatewayAuthorizerResult> => {
 	try {
 		console.log(`EVENT:\n${JSON.stringify(event, null, 2)}`)
-		const input = getInput(SECRET_NAME)
+		const input = getInput()
 		console.log(`INPUT:\n${JSON.stringify(input, null, 2)}`)
 		const command = getCommand(input)
 		console.log(`COMMAND:\n${JSON.stringify(command, null, 2)}`)

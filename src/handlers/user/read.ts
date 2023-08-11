@@ -15,17 +15,13 @@ const getCommand = (input: ListUsersCommandInput): ListUsersCommand =>  {
 }
 
 const getResult = (statusCode: number, response?: ListUsersCommandOutput): APIGatewayProxyResult =>  {
-	let	message: any = 'List Users Command Failed'
-	if (response && statusCode == 200) {
-		if (response.Users) {
-			message = {
-				Users: [],
-			}
-			response.Users.forEach(element => {
-				message.Users.push(element.UserName)
-			})
-		}
+	let	message: any = {
+		Users: [],
 	}
+	
+	statusCode == 200 ? response?.Users?.forEach(element => {
+		message.Users.push(element.UserName)
+	}) : message = 'List User Command Failed'
 
 	return {
 		body: JSON.stringify({
